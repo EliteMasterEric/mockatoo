@@ -10,6 +10,8 @@ import haxe.PosInfos;
 import haxe.macro.Printer;
 import haxe.macro.TypeTools;
 import haxe.ds.StringMap;
+import tink.macro.Types;
+import Type in Enums;
 
 using haxe.macro.Tools;
 using mockatoo.macro.Tools;
@@ -294,10 +296,35 @@ class ClassFields
 
 		for(param in params)
 		{
-			var complexType = convertType(param.t, paramMap);
+			var paramConstraints:Array<ComplexType> = new Array();
+			switch(param.t)
+			{
+				default:
+				case TInst(ct, _):
+					switch(ct.get().kind)
+					{
+						default:
+						case KTypeParameter(constraints):
+							for (c in constraints)
+							{
+								switch(c)
+								{
+									default:
+									case TAbstract(t, tparams):
+										var type = t.get();
+										var complexType:ComplexType = Types.asComplexType(type.module + '.' + type.name, [for (p in tparams) TPType(Types.toComplex(p))]);
+										paramConstraints.push(complexType);
+									case TInst(t, tparams):
+										var type = t.get();
+										var complexType:ComplexType = Types.asComplexType(type.module + '.' + type.name, [for (p in tparams) TPType(Types.toComplex(p))]);
+										paramConstraints.push(complexType);
+								}
+							}
+					}
+			}
 			var result = {
 				name:param.name,
-				constraints:[],
+				constraints:paramConstraints,
 				params:[]
 			}
 			results.push(result);
@@ -352,7 +379,7 @@ class ClassFields
 	{
 		return switch (access)
 		{
-			case AccNormal, AccInline: "default";
+			case AccNormal, AccInline, AccCtor: "default";
 			case AccNo: "null";
 			case AccNever: "never";
 			case AccResolve: throw "not implemented for VarAccess [" + access + "]";

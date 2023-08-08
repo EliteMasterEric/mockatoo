@@ -10,6 +10,7 @@ import mockatoo.Mock;
 import mockatoo.macro.ClassFields;
 import mockatoo.internal.MockOutcome;
 import haxe.ds.StringMap;
+import tink.MacroApi.ObjectField;
 
 using StringTools;
 using haxe.macro.Tools;
@@ -167,9 +168,9 @@ class MockMaker
 	*/
 	function createMockFromStruct(fields:Array<ClassField>)
 	{
-		var args:Array<{ field : String, expr : Expr }> = [];
+		var args:Array<ObjectField> = [];
 
-		var arg:{ field : String, expr : Expr };
+		var arg:ObjectField;
 
 		for (field in fields)
 		{
@@ -528,6 +529,8 @@ class MockMaker
 		{
 			case FFun(f):
 
+				for ( ff in fields){ if ( ff.name == field.name){ return; }; }
+				
 				if (field.name == "new")
 				{
 					overrideConstructor(field, f);
@@ -989,11 +992,7 @@ class MockMaker
 				case TInst(t,p): t.get();
 				case TEnum(t,p): t.get();
 				case TType(t,p): t.get();
-				case TAbstract(t,p): 
-					var id = t.get().type.getId().toComplex();
-
-					
-						null;
+				case TAbstract(t,p): null;
 				case _: null;
 			}
 
